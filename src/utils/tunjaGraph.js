@@ -8,7 +8,7 @@ export const nodeCoordinates = {
   "Hotel Girasol": { lat: 5.5292378, lng: -73.3596753 },
   "Pozo de Hunzahua": { lat: 5.5333333, lng: -73.3666667 },
   "Cojines del Zaque": { lat: 5.53821, lng: -73.3695108 },
-  UPTC: { lat: 5.55178, lng: -73.35656 },
+  UPTC: { lat: 5.549058, lng: -73.354384 },
   "Gimnasio Moderno": { lat: 5.5410196, lng: -73.3576846 },
   "Universidad de Boyaca": { lat: 5.5672993, lng: -73.3382574 },
   "Viva Tunja": { lat: 5.5570086, lng: -73.3463232 },
