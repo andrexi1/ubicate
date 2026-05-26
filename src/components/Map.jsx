@@ -3,6 +3,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-routing-machine";
 import { useEffect, useRef } from "react";
+import { getCoordinates } from "../utils/tunjaGraph";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -13,6 +14,30 @@ L.Icon.Default.mergeOptions({
   shadowUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
+
+const markerIcons = {
+  default: L.divIcon({
+    className: "ubicate-marker",
+    html: '<span class="ubicate-marker-pin ubicate-marker-default"></span>',
+    iconSize: [30, 42],
+    iconAnchor: [15, 42],
+    popupAnchor: [0, -38],
+  }),
+  start: L.divIcon({
+    className: "ubicate-marker",
+    html: '<span class="ubicate-marker-pin ubicate-marker-start"><span class="ubicate-marker-label">A</span></span>',
+    iconSize: [34, 46],
+    iconAnchor: [17, 46],
+    popupAnchor: [0, -42],
+  }),
+  end: L.divIcon({
+    className: "ubicate-marker",
+    html: '<span class="ubicate-marker-pin ubicate-marker-end"><span class="ubicate-marker-label">B</span></span>',
+    iconSize: [34, 46],
+    iconAnchor: [17, 46],
+    popupAnchor: [0, -42],
+  }),
+};
 
 function RoutingMachine({ start, end }) {
   const map = useMap();
@@ -72,11 +97,20 @@ function RoutingMachine({ start, end }) {
   return null;
 }
 
-export default function UbicateMap({ start, end, onSelectPoint, allPoints }) {
+export default function UbicateMap({
+  start,
+  end,
+  startName,
+  endName,
+  activePoint,
+  onSelectPoint,
+  allPoints,
+}) {
   return (
     <MapContainer
       center={[5.535, -73.36]}
       zoom={14}
+      doubleClickZoom={false}
       style={{ width: "100%", height: "100vh" }}
     >
       <TileLayer
@@ -84,27 +118,33 @@ export default function UbicateMap({ start, end, onSelectPoint, allPoints }) {
         attribution="&copy; OpenStreetMap contributors"
       />
 
-      {Object.entries(allPoints).map(([name, connections]) => {
-        const pos = Object.values(connections)[0];
+      {Object.keys(allPoints).map((name) => {
+        const pos = getCoordinates(name);
+        if (!pos) return null;
+        const markerType =
+          name === startName ? "start" : name === endName ? "end" : "default";
+
         return (
           <Marker
             key={name}
             position={[pos.lat, pos.lng]}
+            icon={markerIcons[markerType]}
             eventHandlers={{
-              click: () => onSelectPoint(name, { lat: pos.lat, lng: pos.lng }),
+              click: (event) => {
+                event.originalEvent?.stopPropagation();
+                onSelectPoint(name, { lat: pos.lat, lng: pos.lng });
+                event.target.openPopup();
+              },
             }}
           >
             <Popup>
               <strong>{name}</strong>
               <br />
-              Clic para seleccionar como punto
+              Seleccionado como {activePoint === "start" ? "Punto A" : "Punto B"}
             </Popup>
           </Marker>
         );
       })}
-
-      {start && <Marker position={[start.lat, start.lng]} />}
-      {end && <Marker position={[end.lat, end.lng]} />}
 
       <RoutingMachine start={start} end={end} />
     </MapContainer>
