@@ -1,4 +1,13 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
+import {
+  ArrowUpDown,
+  Bookmark,
+  ChevronDown,
+  ChevronUp,
+  MapPinned,
+  Network,
+  Search,
+} from "lucide-react";
 import { getCoordinates, tunjaGraph } from "./utils/tunjaGraph";
 import { dijkstra } from "./utils/dijkstra";
 
@@ -12,8 +21,15 @@ function App() {
   const [startName, setStartName] = useState("");
   const [endName, setEndName] = useState("");
   const [result, setResult] = useState(null);
-  const [showPanel, setShowPanel] = useState(true);
   const [activePoint, setActivePoint] = useState("start");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [panelOpen, setPanelOpen] = useState(true);
+
+  const filteredNodes = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return nodes;
+    return nodes.filter((node) => node.toLowerCase().includes(query));
+  }, [nodes, searchTerm]);
 
   const handleSelectPoint = (name, coords) => {
     const pointName = name || (activePoint === "start" ? "Punto A" : "Punto B");
@@ -48,6 +64,14 @@ function App() {
     setResult(null);
   };
 
+  const swapPoints = () => {
+    setStart(end);
+    setEnd(start);
+    setStartName(endName);
+    setEndName(startName);
+    setResult(null);
+  };
+
   const calculateRoute = () => {
     if (!start || !end) {
       alert("Selecciona Punto A y Punto B desde la tabla o desde los marcadores");
@@ -68,70 +92,50 @@ function App() {
     });
   };
 
-  const reset = () => {
-    setStart(null);
-    setEnd(null);
-    setStartName("");
-    setEndName("");
-    setResult(null);
-    setShowPanel(false);
-    setActivePoint("start");
-  };
+  const estimatedMinutes = result ? Math.max(1, Math.round(result.distance * 4)) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
-      <header className="bg-gradient-to-r from-violet-700 via-fuchsia-600 to-indigo-700 py-5 shadow-2xl z-50 relative flex-shrink-0">
-        <div className="flex items-center justify-center gap-4 px-4">
-          <div className="text-5xl md:text-6xl animate-bounce" aria-hidden="true">
-            🗺️
-          </div>
+    <div className="min-h-screen bg-[#f7f8f5] text-slate-900">
+      <header className="flex items-center justify-between gap-4 px-5 py-4 lg:px-6">
+        <div className="flex items-center gap-4">
+          <MapPinned className="h-14 w-14 text-[#2f7d52]" strokeWidth={1.8} />
           <div>
-            <h1
-              className="text-5xl md:text-7xl font-black tracking-tighter
-                         bg-gradient-to-r from-purple-200 via-violet-300 to-fuchsia-200
-                         bg-clip-text text-transparent drop-shadow-2xl animate-pulse"
-            >
+            <h1 className="font-serif text-4xl font-black tracking-wide text-slate-900 md:text-5xl">
               UBICATE
             </h1>
-            <p className="text-center text-indigo-100 text-base md:text-xl font-medium">
+            <p className="text-base text-slate-600 md:text-lg">
               Encuentra tu ruta ideal en Tunja
             </p>
           </div>
         </div>
 
-        <div className="absolute right-4 top-1/2 z-[1200] flex -translate-y-1/2 items-center gap-3 rounded-2xl bg-gray-950/80 p-2 text-white shadow-2xl backdrop-blur">
-          <div className="hidden xl:block text-right text-sm leading-tight">
-            <p>
-              <strong>A:</strong> {startName || "Sin seleccionar"}
+        <div className="flex items-center gap-3">
+          <div className="hidden rounded-md border border-slate-200 bg-white px-5 py-3 shadow-sm md:block">
+            <p className="flex items-center gap-3 text-sm">
+              <span className="h-3 w-3 rounded-full bg-[#2f7d52]"></span>
+              <strong>Punto A:</strong>
+              <span>{startName || "Selecciona un nodo"}</span>
             </p>
-            <p className="text-gray-300">
-              <strong>B:</strong> {endName || "Sin seleccionar"}
+            <p className="mt-2 flex items-center gap-3 text-sm">
+              <span className="h-3 w-3 rounded-full bg-[#9a682e]"></span>
+              <strong>Punto B:</strong>
+              <span>{endName || "Selecciona un nodo"}</span>
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowPanel((value) => !value)}
-            aria-label={showPanel ? "Cerrar menu de ruta" : "Abrir menu de ruta"}
-            aria-expanded={showPanel}
-            className="grid h-11 w-11 place-items-center rounded-xl bg-violet-600 hover:bg-violet-500 transition"
-          >
-            <span className="sr-only">
-              {showPanel ? "Cerrar menu" : "Abrir menu"}
-            </span>
-            <span className="flex flex-col gap-1.5" aria-hidden="true">
-              <span className="block h-0.5 w-6 rounded bg-white"></span>
-              <span className="block h-0.5 w-6 rounded bg-white"></span>
-              <span className="block h-0.5 w-6 rounded bg-white"></span>
-            </span>
-          </button>
         </div>
       </header>
 
-      <main className="flex flex-1 overflow-hidden relative">
-        <div className="flex-1 relative">
+      <main className="px-5 pb-5 lg:px-6">
+        <section
+          className={`relative overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition-[height] duration-500 ease-in-out ${
+            panelOpen
+              ? "h-[24rem] lg:h-[27rem]"
+              : "h-[calc(100vh-15rem)] min-h-[28rem]"
+          }`}
+        >
           <Suspense
             fallback={
-              <div className="h-full min-h-[520px] bg-gray-900 grid place-items-center text-gray-300">
+              <div className="grid h-full place-items-center bg-slate-100 text-slate-500">
                 Cargando mapa...
               </div>
             }
@@ -144,190 +148,209 @@ function App() {
               activePoint={activePoint}
               onSelectPoint={handleSelectPoint}
               allPoints={tunjaGraph}
+              resizeKey={panelOpen}
             />
           </Suspense>
+
+          <div className="absolute left-5 top-5 z-[1000] w-[17rem] rounded-md border border-slate-200 bg-white/95 p-5 shadow-lg backdrop-blur">
+            <h2 className="text-xl font-black tracking-wide text-[#23633f]">
+              TU RUTA
+            </h2>
+            <div className="my-4 h-px bg-slate-200"></div>
+
+            <div className="flex gap-3">
+              <MapPinned className="mt-1 h-6 w-6 text-[#2f7d52]" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide">
+                  Punto A
+                </p>
+                <p className="mt-2 text-sm text-slate-700">
+                  {startName || "Selecciona un nodo"}
+                </p>
+              </div>
+            </div>
+
+            <div className="relative my-4 h-px bg-slate-200">
+              <button
+                type="button"
+                onClick={swapPoints}
+                disabled={!start || !end}
+                className="absolute left-1/2 top-1/2 grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-40"
+                aria-label="Intercambiar puntos"
+              >
+                <ArrowUpDown className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex gap-3">
+              <MapPinned className="mt-1 h-6 w-6 text-[#9a682e]" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide">
+                  Punto B
+                </p>
+                <p className="mt-2 text-sm text-slate-700">
+                  {endName || "Selecciona un nodo"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setPanelOpen((prev) => !prev)}
+            className="group flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-[#23633f] shadow-sm transition hover:bg-[#eef6f1]"
+            aria-expanded={panelOpen}
+            aria-controls="panel-inferior"
+          >
+            {panelOpen ? (
+              <>
+                <ChevronUp className="h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
+                Ocultar panel
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-5 w-5 transition-transform group-hover:translate-y-0.5" />
+                Mostrar panel
+              </>
+            )}
+          </button>
         </div>
 
-        <aside
-          className={`
-          w-full max-w-[100vw] sm:max-w-[28rem] xl:max-w-[56rem] xl:w-[56rem] bg-gray-900 border-l border-gray-700 overflow-auto z-[1100]
-          fixed inset-y-0 right-0 shadow-2xl transition-transform duration-300
-          ${showPanel ? "translate-x-0" : "translate-x-full"}
-        `}
-          aria-label="Panel de seleccion de ruta"
+        <section
+          id="panel-inferior"
+          className={`grid gap-5 overflow-hidden transition-all duration-500 ease-in-out lg:grid-cols-[minmax(22rem,0.8fr)_minmax(28rem,1.05fr)] ${
+            panelOpen
+              ? "mt-5 max-h-[200rem] opacity-100"
+              : "mt-0 max-h-0 opacity-0"
+          }`}
         >
-          <div className="p-6 space-y-6">
-            <button
-              type="button"
-              onClick={() => setShowPanel(false)}
-              aria-label="Cerrar panel de resultados"
-              className="text-3xl absolute top-4 right-4 text-gray-400 hover:text-white transition"
-            >
-              x
-            </button>
-
-            <div className="bg-gray-800 p-5 rounded-3xl">
-              <p className="text-lg">
-                <strong>Punto A:</strong> {startName || "Selecciona un nodo"}
-              </p>
-              <p className="text-lg mt-2">
-                <strong>Punto B:</strong> {endName || "Selecciona un nodo"}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+          <div className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+            <div className="grid grid-cols-2 border-b border-slate-200">
               <button
                 type="button"
-                onClick={() => setActivePoint("start")}
-                className={`py-3 rounded-2xl font-bold transition ${
-                  activePoint === "start"
-                    ? "bg-emerald-500 text-gray-950"
-                    : "bg-gray-800 text-gray-200 hover:bg-gray-700"
-                }`}
+                className="flex items-center justify-center gap-3 border-r border-slate-200 px-4 py-4 font-bold text-[#23633f]"
               >
-                Elegir Punto A
+                NODOS DISPONIBLES
               </button>
               <button
                 type="button"
-                onClick={() => setActivePoint("end")}
-                className={`py-3 rounded-2xl font-bold transition ${
-                  activePoint === "end"
-                    ? "bg-orange-500 text-gray-950"
-                    : "bg-gray-800 text-gray-200 hover:bg-gray-700"
-                }`}
+                className="flex items-center justify-center gap-3 px-4 py-4 text-slate-700"
               >
-                Elegir Punto B
+                <Bookmark className="h-5 w-5" />
+                MIS RUTAS GUARDADAS
               </button>
             </div>
 
-            <div
-              className={`grid gap-5 ${
-                result ? "xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : ""
-              }`}
-            >
-              <div className="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
-                <div className="px-4 py-3 border-b border-gray-700">
-                  <h2 className="text-lg font-bold text-violet-200">
-                    Nodos disponibles
-                  </h2>
-                </div>
+            <div className="p-4">
+              <label className="flex items-center gap-3 rounded-md border border-slate-200 px-3 py-2 text-slate-500">
+                <Search className="h-5 w-5" />
+                <input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                  placeholder="Buscar nodo..."
+                />
+              </label>
+            </div>
 
-                <div className={result ? "max-h-[34rem] overflow-auto" : "max-h-80 overflow-auto"}>
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-gray-900 text-gray-300">
-                      <tr>
-                        <th className="px-3 py-3 text-left font-semibold">
-                          Nodo
-                        </th>
-                        <th className="px-3 py-3 text-center font-semibold">
-                          A
-                        </th>
-                        <th className="px-3 py-3 text-center font-semibold">
-                          B
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {nodes.map((node) => {
-                        const isStart = startName === node;
-                        const isEnd = endName === node;
+            <div className="max-h-[22rem] overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-white text-slate-700">
+                  <tr className="border-y border-slate-200">
+                    <th className="px-5 py-3 text-left font-semibold">Nodo</th>
+                    <th className="px-4 py-3 text-center font-semibold">A</th>
+                    <th className="px-4 py-3 text-center font-semibold">B</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredNodes.map((node) => {
+                    const isStart = startName === node;
+                    const isEnd = endName === node;
 
-                        return (
-                          <tr
-                            key={node}
-                            className={`border-t border-gray-700/70 ${
-                              isStart || isEnd ? "bg-violet-950/50" : ""
-                            }`}
-                          >
-                            <td className="px-3 py-3 text-gray-100">
-                              <div className="font-semibold">{node}</div>
-                              <div className="text-xs text-gray-400">
-                                {Object.keys(tunjaGraph[node]).length} conexiones
+                    return (
+                      <tr key={node} className="border-b border-slate-200">
+                        <td className="px-5 py-2.5">
+                          <div className="flex items-center gap-3">
+                            <MapPinned className="h-5 w-5 text-[#2f7d52]" />
+                            <div>
+                              <div className="font-medium text-slate-900">
+                                {node}
                               </div>
-                            </td>
-                            <td className="px-3 py-3 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleSelectNode(node, "start")}
-                                className={`h-9 w-9 rounded-full font-bold transition ${
-                                  isStart
-                                    ? "bg-emerald-500 text-gray-950"
-                                    : "bg-gray-700 text-gray-200 hover:bg-emerald-600"
-                                }`}
-                                aria-label={`Usar ${node} como punto A`}
-                              >
-                                A
-                              </button>
-                            </td>
-                            <td className="px-3 py-3 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleSelectNode(node, "end")}
-                                className={`h-9 w-9 rounded-full font-bold transition ${
-                                  isEnd
-                                    ? "bg-orange-500 text-gray-950"
-                                    : "bg-gray-700 text-gray-200 hover:bg-orange-600"
-                                }`}
-                                aria-label={`Usar ${node} como punto B`}
-                              >
-                                B
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {result && (
-                <Suspense
-                  fallback={
-                    <div className="rounded-2xl bg-gray-800 p-5 text-gray-300">
-                      Cargando resultado...
-                    </div>
-                  }
-                >
-                  <DijkstraVisualizer
-                    steps={result.steps}
-                    path={result.path}
-                    distance={result.distance}
-                    startName={result.startName}
-                    endName={result.endName}
-                  />
-                </Suspense>
-              )}
+                              <div className="text-xs text-slate-500">
+                                {Object.keys(tunjaGraph[node]).length}{" "}
+                                {Object.keys(tunjaGraph[node]).length === 1
+                                  ? "conexion"
+                                  : "conexiones"}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectNode(node, "start")}
+                            className={`h-9 w-9 rounded-full border font-semibold transition ${
+                              isStart
+                                ? "border-[#2f7d52] bg-[#2f7d52] text-white"
+                                : "border-[#7ba18d] text-slate-800 hover:bg-[#eef6f1]"
+                            }`}
+                            aria-label={`Usar ${node} como punto A`}
+                          >
+                            A
+                          </button>
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectNode(node, "end")}
+                            className={`h-9 w-9 rounded-full border font-semibold transition ${
+                              isEnd
+                                ? "border-[#9a682e] bg-[#9a682e] text-white"
+                                : "border-[#7ba18d] text-slate-800 hover:bg-[#eef6f1]"
+                            }`}
+                            aria-label={`Usar ${node} como punto B`}
+                          >
+                            B
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-
-            <button
-              type="button"
-              onClick={calculateRoute}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-500 py-5 rounded-3xl text-xl font-bold hover:brightness-110 transition"
-            >
-              CALCULAR MEJOR RUTA
-            </button>
-
-            <button
-              type="button"
-              onClick={reset}
-              className="w-full bg-gradient-to-r from-purple-500 to-violet-600 py-4 rounded-3xl text-lg font-bold hover:brightness-110 transition"
-            >
-              Reiniciar
-            </button>
-
           </div>
-        </aside>
-      </main>
 
-      <button
-        type="button"
-        onClick={() => setShowPanel(true)}
-        aria-label="Abrir panel de seleccion"
-        className="lg:hidden fixed bottom-6 right-6 bg-violet-600 text-white p-5 rounded-full shadow-2xl text-2xl z-50"
-      >
-        +
-      </button>
+          <Suspense
+            fallback={
+              <div className="rounded-md border border-slate-200 bg-white p-6 text-slate-500 shadow-sm">
+                Cargando ruta...
+              </div>
+            }
+          >
+            <DijkstraVisualizer
+              steps={result?.steps ?? []}
+              path={result?.path ?? []}
+              distance={result?.distance ?? 0}
+              graph={tunjaGraph}
+              startName={result?.startName}
+              endName={result?.endName}
+              estimatedMinutes={estimatedMinutes}
+            />
+          </Suspense>
+        </section>
+
+        <button
+          type="button"
+          onClick={calculateRoute}
+          className="mt-4 flex w-full items-center justify-center gap-4 rounded-md bg-[#23633f] px-6 py-4 text-xl font-black tracking-wide text-white shadow-sm transition hover:bg-[#1c5234]"
+        >
+          <Network className="h-6 w-6" />
+          CALCULAR MEJOR RUTA
+        </button>
+      </main>
     </div>
   );
 }

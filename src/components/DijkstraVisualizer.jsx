@@ -1,76 +1,135 @@
+import { Clock3, Milestone, Network } from "lucide-react";
+
 export default function DijkstraVisualizer({
-  steps,
   path,
   distance,
   graph,
-  startName,
-  endName,
+  estimatedMinutes,
 }) {
+  const hasRoute = path.length > 0;
+
+  const routeRows = hasRoute
+    ? path.map((node, index) => {
+        const previousNode = path[index - 1];
+        const edgeWeight = previousNode ? graph?.[previousNode]?.[node]?.weight : 0;
+        const cumulativeDistance = path
+          .slice(1, index + 1)
+          .reduce((total, currentNode, currentIndex) => {
+            const from = path[currentIndex];
+            return total + (graph?.[from]?.[currentNode]?.weight ?? 0);
+          }, 0);
+
+        return {
+          node,
+          edgeWeight,
+          cumulativeDistance,
+          detail:
+            index === 0
+              ? "Punto de partida"
+              : index === path.length - 1
+                ? "Destino final"
+                : edgeWeight
+                  ? `Avanza ${edgeWeight.toFixed(2)} km desde el nodo anterior`
+                  : "Continua por la ruta sugerida",
+        };
+      })
+    : [];
+
   return (
-    <div className="bg-gray-900 p-5 rounded-2xl text-white max-h-[34rem] overflow-auto border border-gray-700">
-      <h3 className="text-xl font-bold mb-4 text-green-400">
-          Procedimiento Dijkstra
-      </h3>
+    <div className="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-black uppercase tracking-wide text-slate-900">
+            Ruta sugerida
+          </h2>
+        </div>
 
-      {steps.map((step, i) => (
-        <div
-          key={i}
-          className="mb-4 border-l-4 border-blue-500 pl-4 py-3 bg-gray-800 rounded-xl"
-        >
-          <p className="font-semibold text-yellow-400 mb-3">
-            Paso {i + 1}: Visitando <strong>{step.current}</strong>
-          </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex items-center gap-3 rounded-md border border-slate-200 px-4 py-2">
+            <Milestone className="h-7 w-7 text-slate-800" />
+            <div>
+              <p className="text-xs text-slate-500">Distancia total</p>
+              <p className="font-black text-[#23633f]">
+                {hasRoute ? distance.toFixed(2) : "0.00"} km
+              </p>
+            </div>
+          </div>
 
-          <div className="text-sm space-y-1">
-            {Object.entries(step.distances)
-              .filter((entry) => entry[1] !== Infinity)
-              .sort((a, b) => a[1] - b[1])
-              .slice(0, 15)
-              .map(([node, dist]) => (
-                <div key={node} className="flex justify-between items-center">
-                  <span className="text-gray-300">{node}</span>
-                  <span className="font-mono font-bold text-green-400">
-                    {dist.toFixed(2)} km
-                  </span>
+          <div className="flex items-center gap-3 rounded-md border border-slate-200 px-4 py-2">
+            <Clock3 className="h-7 w-7 text-slate-800" />
+            <div>
+              <p className="text-xs text-slate-500">Tiempo estimado</p>
+              <p className="font-black text-[#23633f]">
+                {hasRoute ? estimatedMinutes : 0} min
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {hasRoute ? (
+        <div className="mt-4 max-h-[22rem] overflow-auto pr-1">
+          <div className="relative space-y-3 pl-11">
+            <div className="absolute bottom-5 left-[1.15rem] top-5 w-px bg-[#c9d8cf]"></div>
+
+            {routeRows.map((row, index) => {
+              const isLast = index === routeRows.length - 1;
+
+              return (
+                <div key={`${row.node}-${index}`} className="relative">
+                  <div
+                    className={`absolute -left-11 top-1 grid h-7 w-7 place-items-center rounded-full text-sm font-black text-white ${
+                      isLast ? "bg-[#9a682e]" : "bg-[#2f7d52]"
+                    }`}
+                  >
+                    {index + 1}
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 rounded-md border border-slate-200 bg-white px-5 py-3 shadow-sm">
+                    <div>
+                      <p
+                        className={`font-black ${
+                          isLast ? "text-[#9a682e]" : "text-slate-900"
+                        }`}
+                      >
+                        {row.node}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-500">{row.detail}</p>
+                    </div>
+                    <p
+                      className={`shrink-0 text-sm font-semibold ${
+                        isLast ? "text-[#9a682e]" : "text-slate-600"
+                      }`}
+                    >
+                      {row.cumulativeDistance.toFixed(2)} km
+                    </p>
+                  </div>
                 </div>
-              ))}
+              );
+            })}
           </div>
         </div>
-      ))}
-
-      {/* Ruta Óptima */}
-      {path && (
-        <div className="mt-6 p-5 bg-emerald-900 rounded-2xl border border-emerald-600">
-          <p className="text-lg font-bold text-emerald-300">
-              Ruta Más Corta (Óptima)
-          </p>
-          <p className="text-2xl font-bold mt-2">{distance.toFixed(2)} km</p>
-          <p className="mt-3 text-base font-medium text-emerald-200">
-            {path.join(" → ")}
-          </p>
-        </div>
-      )}
-
-      {/* Rutas Alternativas */}
-      {startName && endName && graph && (
-        <div className="mt-6 p-6 bg-orange-900/70 rounded-2xl border border-orange-600">
-          <p className="text-xl font-bold text-orange-300 mb-3">
-            🔄 Otras Rutas Posibles
-          </p>
-          <p className="text-sm text-gray-400 mb-4">
-            Rutas alternativas (más largas)
-          </p>
-
-          {/* Aquí puedes agregar lógica para mostrar 2-3 rutas alternativas */}
-          <div className="text-orange-200 text-sm">
-            Ejemplo de ruta alternativa:
-            <br />
-            {startName} → Catedral → Templo Santo Domingo → {endName}
-            <br />
-            (aprox. +0.8 km más)
+      ) : (
+        <div className="grid min-h-[18rem] place-items-center text-center text-slate-500">
+          <div>
+            <RoutePlaceholder />
+            <p className="mt-4 font-semibold text-slate-700">
+              Selecciona dos nodos y calcula la mejor ruta
+            </p>
+            <p className="mt-1 text-sm">
+              Aqui aparecera el recorrido ordenado por Dijkstra.
+            </p>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function RoutePlaceholder() {
+  return (
+    <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#eef6f1]">
+      <Network className="h-8 w-8 text-[#23633f]" />
     </div>
   );
 }

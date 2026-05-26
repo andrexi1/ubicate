@@ -1,4 +1,11 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  ZoomControl,
+  useMap,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-routing-machine";
@@ -70,7 +77,7 @@ function RoutingMachine({ start, end }) {
     // Forzar ocultamiento fuerte del panel
     const hidePanel = () => {
       const panels = document.querySelectorAll(
-        ".leaflet-routing-container, .leaflet-routing-alt, .leaflet-control-container",
+        ".leaflet-routing-container, .leaflet-routing-alt",
       );
       panels.forEach((panel) => {
         panel.style.display = "none";
@@ -97,6 +104,17 @@ function RoutingMachine({ start, end }) {
   return null;
 }
 
+function MapResizer({ trigger }) {
+  const map = useMap();
+  useEffect(() => {
+    const timers = [50, 250, 550].map((delay) =>
+      setTimeout(() => map.invalidateSize(), delay),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [trigger, map]);
+  return null;
+}
+
 export default function UbicateMap({
   start,
   end,
@@ -105,18 +123,21 @@ export default function UbicateMap({
   activePoint,
   onSelectPoint,
   allPoints,
+  resizeKey,
 }) {
   return (
     <MapContainer
       center={[5.535, -73.36]}
       zoom={14}
+      zoomControl={false}
       doubleClickZoom={false}
-      style={{ width: "100%", height: "100vh" }}
+      style={{ width: "100%", height: "100%" }}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution="&copy; OpenStreetMap contributors"
       />
+      <ZoomControl position="topright" />
 
       {Object.keys(allPoints).map((name) => {
         const pos = getCoordinates(name);
@@ -147,6 +168,7 @@ export default function UbicateMap({
       })}
 
       <RoutingMachine start={start} end={end} />
+      <MapResizer trigger={resizeKey} />
     </MapContainer>
   );
 }
