@@ -12,7 +12,7 @@ function App() {
   const [startName, setStartName] = useState("");
   const [endName, setEndName] = useState("");
   const [result, setResult] = useState(null);
-  const [showPanel, setShowPanel] = useState(false);
+  const [showPanel, setShowPanel] = useState(true);
   const [activePoint, setActivePoint] = useState("start");
 
   const handleSelectPoint = (name, coords) => {
@@ -66,7 +66,6 @@ function App() {
       startName,
       endName,
     });
-    setShowPanel(true);
   };
 
   const reset = () => {
@@ -99,6 +98,33 @@ function App() {
             </p>
           </div>
         </div>
+
+        <div className="absolute right-4 top-1/2 z-[1200] flex -translate-y-1/2 items-center gap-3 rounded-2xl bg-gray-950/80 p-2 text-white shadow-2xl backdrop-blur">
+          <div className="hidden xl:block text-right text-sm leading-tight">
+            <p>
+              <strong>A:</strong> {startName || "Sin seleccionar"}
+            </p>
+            <p className="text-gray-300">
+              <strong>B:</strong> {endName || "Sin seleccionar"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPanel((value) => !value)}
+            aria-label={showPanel ? "Cerrar menu de ruta" : "Abrir menu de ruta"}
+            aria-expanded={showPanel}
+            className="grid h-11 w-11 place-items-center rounded-xl bg-violet-600 hover:bg-violet-500 transition"
+          >
+            <span className="sr-only">
+              {showPanel ? "Cerrar menu" : "Abrir menu"}
+            </span>
+            <span className="flex flex-col gap-1.5" aria-hidden="true">
+              <span className="block h-0.5 w-6 rounded bg-white"></span>
+              <span className="block h-0.5 w-6 rounded bg-white"></span>
+              <span className="block h-0.5 w-6 rounded bg-white"></span>
+            </span>
+          </button>
+        </div>
       </header>
 
       <main className="flex flex-1 overflow-hidden relative">
@@ -124,9 +150,9 @@ function App() {
 
         <aside
           className={`
-          w-full lg:w-96 bg-gray-900 border-l border-gray-700 overflow-auto z-40
-          fixed lg:relative inset-y-0 right-0 transition-transform duration-300
-          ${showPanel ? "translate-x-0" : "translate-x-full lg:translate-x-0"}
+          w-full max-w-[100vw] sm:max-w-[28rem] xl:max-w-[56rem] xl:w-[56rem] bg-gray-900 border-l border-gray-700 overflow-auto z-[1100]
+          fixed inset-y-0 right-0 shadow-2xl transition-transform duration-300
+          ${showPanel ? "translate-x-0" : "translate-x-full"}
         `}
           aria-label="Panel de seleccion de ruta"
         >
@@ -135,7 +161,7 @@ function App() {
               type="button"
               onClick={() => setShowPanel(false)}
               aria-label="Cerrar panel de resultados"
-              className="lg:hidden text-3xl absolute top-4 right-4 text-gray-400"
+              className="text-3xl absolute top-4 right-4 text-gray-400 hover:text-white transition"
             >
               x
             </button>
@@ -174,80 +200,104 @@ function App() {
               </button>
             </div>
 
-            <div className="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
-              <div className="px-4 py-3 border-b border-gray-700">
-                <h2 className="text-lg font-bold text-violet-200">
-                  Nodos disponibles
-                </h2>
+            <div
+              className={`grid gap-5 ${
+                result ? "xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : ""
+              }`}
+            >
+              <div className="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                <div className="px-4 py-3 border-b border-gray-700">
+                  <h2 className="text-lg font-bold text-violet-200">
+                    Nodos disponibles
+                  </h2>
+                </div>
+
+                <div className={result ? "max-h-[34rem] overflow-auto" : "max-h-80 overflow-auto"}>
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-gray-900 text-gray-300">
+                      <tr>
+                        <th className="px-3 py-3 text-left font-semibold">
+                          Nodo
+                        </th>
+                        <th className="px-3 py-3 text-center font-semibold">
+                          A
+                        </th>
+                        <th className="px-3 py-3 text-center font-semibold">
+                          B
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {nodes.map((node) => {
+                        const isStart = startName === node;
+                        const isEnd = endName === node;
+
+                        return (
+                          <tr
+                            key={node}
+                            className={`border-t border-gray-700/70 ${
+                              isStart || isEnd ? "bg-violet-950/50" : ""
+                            }`}
+                          >
+                            <td className="px-3 py-3 text-gray-100">
+                              <div className="font-semibold">{node}</div>
+                              <div className="text-xs text-gray-400">
+                                {Object.keys(tunjaGraph[node]).length} conexiones
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleSelectNode(node, "start")}
+                                className={`h-9 w-9 rounded-full font-bold transition ${
+                                  isStart
+                                    ? "bg-emerald-500 text-gray-950"
+                                    : "bg-gray-700 text-gray-200 hover:bg-emerald-600"
+                                }`}
+                                aria-label={`Usar ${node} como punto A`}
+                              >
+                                A
+                              </button>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleSelectNode(node, "end")}
+                                className={`h-9 w-9 rounded-full font-bold transition ${
+                                  isEnd
+                                    ? "bg-orange-500 text-gray-950"
+                                    : "bg-gray-700 text-gray-200 hover:bg-orange-600"
+                                }`}
+                                aria-label={`Usar ${node} como punto B`}
+                              >
+                                B
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              <div className="max-h-80 overflow-auto">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-gray-900 text-gray-300">
-                    <tr>
-                      <th className="px-3 py-3 text-left font-semibold">
-                        Nodo
-                      </th>
-                      <th className="px-3 py-3 text-center font-semibold">
-                        A
-                      </th>
-                      <th className="px-3 py-3 text-center font-semibold">
-                        B
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {nodes.map((node) => {
-                      const isStart = startName === node;
-                      const isEnd = endName === node;
-
-                      return (
-                        <tr
-                          key={node}
-                          className={`border-t border-gray-700/70 ${
-                            isStart || isEnd ? "bg-violet-950/50" : ""
-                          }`}
-                        >
-                          <td className="px-3 py-3 text-gray-100">
-                            <div className="font-semibold">{node}</div>
-                            <div className="text-xs text-gray-400">
-                              {Object.keys(tunjaGraph[node]).length} conexiones
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleSelectNode(node, "start")}
-                              className={`h-9 w-9 rounded-full font-bold transition ${
-                                isStart
-                                  ? "bg-emerald-500 text-gray-950"
-                                  : "bg-gray-700 text-gray-200 hover:bg-emerald-600"
-                              }`}
-                              aria-label={`Usar ${node} como punto A`}
-                            >
-                              A
-                            </button>
-                          </td>
-                          <td className="px-3 py-3 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleSelectNode(node, "end")}
-                              className={`h-9 w-9 rounded-full font-bold transition ${
-                                isEnd
-                                  ? "bg-orange-500 text-gray-950"
-                                  : "bg-gray-700 text-gray-200 hover:bg-orange-600"
-                              }`}
-                              aria-label={`Usar ${node} como punto B`}
-                            >
-                              B
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {result && (
+                <Suspense
+                  fallback={
+                    <div className="rounded-2xl bg-gray-800 p-5 text-gray-300">
+                      Cargando resultado...
+                    </div>
+                  }
+                >
+                  <DijkstraVisualizer
+                    steps={result.steps}
+                    path={result.path}
+                    distance={result.distance}
+                    startName={result.startName}
+                    endName={result.endName}
+                  />
+                </Suspense>
+              )}
             </div>
 
             <button
@@ -266,23 +316,6 @@ function App() {
               Reiniciar
             </button>
 
-            {result && (
-              <Suspense
-                fallback={
-                  <div className="rounded-2xl bg-gray-800 p-5 text-gray-300">
-                    Cargando resultado...
-                  </div>
-                }
-              >
-                <DijkstraVisualizer
-                  steps={result.steps}
-                  path={result.path}
-                  distance={result.distance}
-                  startName={result.startName}
-                  endName={result.endName}
-                />
-              </Suspense>
-            )}
           </div>
         </aside>
       </main>

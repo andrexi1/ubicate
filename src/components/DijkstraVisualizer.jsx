@@ -7,15 +7,15 @@ export default function DijkstraVisualizer({
   endName,
 }) {
   return (
-    <div className="bg-gray-900 p-6 rounded-2xl text-white max-h-[700px] overflow-auto">
-      <h3 className="text-2xl font-bold mb-4 text-green-400">
+    <div className="bg-gray-900 p-5 rounded-2xl text-white max-h-[34rem] overflow-auto border border-gray-700">
+      <h3 className="text-xl font-bold mb-4 text-green-400">
           Procedimiento Dijkstra
       </h3>
 
       {steps.map((step, i) => (
         <div
           key={i}
-          className="mb-6 border-l-4 border-blue-500 pl-4 py-3 bg-gray-800 rounded-xl"
+          className="mb-4 border-l-4 border-blue-500 pl-4 py-3 bg-gray-800 rounded-xl"
         >
           <p className="font-semibold text-yellow-400 mb-3">
             Paso {i + 1}: Visitando <strong>{step.current}</strong>
@@ -40,12 +40,12 @@ export default function DijkstraVisualizer({
 
       {/* Ruta Óptima */}
       {path && (
-        <div className="mt-6 p-6 bg-emerald-900 rounded-2xl border border-emerald-600">
-          <p className="text-xl font-bold text-emerald-300">
+        <div className="mt-6 p-5 bg-emerald-900 rounded-2xl border border-emerald-600">
+          <p className="text-lg font-bold text-emerald-300">
               Ruta Más Corta (Óptima)
           </p>
-          <p className="text-3xl font-bold mt-2">{distance.toFixed(2)} km</p>
-          <p className="mt-3 text-lg font-medium text-emerald-200">
+          <p className="text-2xl font-bold mt-2">{distance.toFixed(2)} km</p>
+          <p className="mt-3 text-base font-medium text-emerald-200">
             {path.join(" → ")}
           </p>
         </div>
