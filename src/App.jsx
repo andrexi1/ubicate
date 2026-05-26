@@ -149,6 +149,7 @@ function App() {
               onSelectPoint={handleSelectPoint}
               allPoints={tunjaGraph}
               resizeKey={panelOpen}
+              routePath={result?.path}
             />
           </Suspense>
 

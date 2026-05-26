@@ -46,7 +46,7 @@ const markerIcons = {
   }),
 };
 
-function RoutingMachine({ start, end }) {
+function RoutingMachine({ start, end, routePath }) {
   const map = useMap();
   const routingControlRef = useRef(null);
 
@@ -58,8 +58,16 @@ function RoutingMachine({ start, end }) {
       map.removeControl(routingControlRef.current);
     }
 
+    const waypoints =
+      routePath && routePath.length >= 2
+        ? routePath
+            .map((name) => getCoordinates(name))
+            .filter(Boolean)
+            .map((coords) => L.latLng(coords.lat, coords.lng))
+        : [L.latLng(start.lat, start.lng), L.latLng(end.lat, end.lng)];
+
     routingControlRef.current = L.Routing.control({
-      waypoints: [L.latLng(start.lat, start.lng), L.latLng(end.lat, end.lng)],
+      waypoints,
       routeWhileDragging: false,
       lineOptions: {
         styles: [{ color: "#22c55e", weight: 7, opacity: 0.9 }],
@@ -99,7 +107,7 @@ function RoutingMachine({ start, end }) {
         map.removeControl(routingControlRef.current);
       }
     };
-  }, [start, end, map]);
+  }, [start, end, routePath, map]);
 
   return null;
 }
@@ -124,6 +132,7 @@ export default function UbicateMap({
   onSelectPoint,
   allPoints,
   resizeKey,
+  routePath,
 }) {
   return (
     <MapContainer
@@ -167,7 +176,7 @@ export default function UbicateMap({
         );
       })}
 
-      <RoutingMachine start={start} end={end} />
+      <RoutingMachine start={start} end={end} routePath={routePath} />
       <MapResizer trigger={resizeKey} />
     </MapContainer>
   );
