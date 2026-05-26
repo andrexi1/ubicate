@@ -23,7 +23,7 @@ export default function DijkstraVisualizer({
 
           <div className="text-sm space-y-1">
             {Object.entries(step.distances)
-              .filter(([_, dist]) => dist !== Infinity)
+              .filter((entry) => entry[1] !== Infinity)
               .sort((a, b) => a[1] - b[1])
               .slice(0, 15)
               .map(([node, dist]) => (
